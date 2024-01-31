@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Geolocation</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="map" style="width:100%; height: 100vh"></div>
+    <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+
+    <script>
+        var map = L.map('map');
+        mapLink = "<a href='http://openstreetmap.org'>OpenStreetMap</a>";
+		L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', { attribution: 'Leaflet &copy; ' + mapLink + ', contribution', maxZoom: 18 }).addTo(map);
+
+        // Use the Geolocation API to get the user's current location
+        navigator.geolocation.getCurrentPosition(function (position) {
+            var currentLat = position.coords.latitude;
+            var currentLng = position.coords.longitude;
+
+            // Set the map view to the user's current location
+            map.setView([currentLat, currentLng], 11);
+
+            // Create a marker at the user's current location
+            var marker = L.marker([currentLat, currentLng]).addTo(map);
+
+            // Adding a default marker at [28.2380, 83.9956] for testing purposes
+           // var defaultMarker = L.marker([28.2380, 83.9956]).addTo(map);
+
+            map.on('click', function (e) {
+                console.log(e);
+
+                // Remove the previous marker
+                map.removeLayer(marker);
+
+                // Add a new marker at the clicked location
+                var newMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+
+                // Plot the route based on the clicked waypoints
+                L.Routing.control({
+                    waypoints: [
+                        L.latLng(currentLat, currentLng),  // Start from current location
+                        L.latLng(e.latlng.lat, e.latlng.lng)  // End at the clicked location
+                    ]
+                }).on('routesfound', function (e) {
+                    var routes = e.routes;
+                    console.log(routes);
+
+                    e.routes[0].coordinates.forEach(function (coord, index) {
+                        setTimeout(function () {
+                            marker.setLatLng([coord.lat, coord.lng]);
+                        }, 100 * index)
+                    })
+
+                }).addTo(map);
+            });
+
+        }, function (error) {
+            // Handle error if geolocation is not available or denied by the user
+            console.error('Error getting current location:', error);
+            // Fallback: Set a default view and add a default marker
+            map.setView([28.2380, 83.9956], 11);
+            var defaultMarker = L.marker([28.2380, 83.9956]).addTo(map);
+        });
+    </script>
+
+</body>
+
+</html>
